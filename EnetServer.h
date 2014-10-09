@@ -12,8 +12,9 @@
 template <class Listener>
 class EnetServer : public EnetBase {
 public:
-	EnetServer(EnetServerListener<Listener>* _listener, EnetServerSettings _settings);
+	EnetServer() : clients(NULL), clientIds(NULL), newClientId(0) {}
 	~EnetServer();
+	void setup(EnetServerListener<Listener>* _listener, EnetServerSettings _settings);
 	bool startup(uint16_t port);
 	void disconnect(uint16_t clientId);
 	void queuePacket(uint16_t clientId, const char* message, size_t messageSize, uint8_t channelId);
@@ -26,6 +27,10 @@ public:
 	void disconnectEvent(const ENetEvent& event);
 
 private:
+	// To avoid problems with destruction
+	EnetServer(const EnetServer& other) {}
+	EnetServer& operator= (const EnetServer& other) {return *this;}
+
 	uint16_t nextFreeClientId();
 
 	EnetServerListener<Listener>* listener;
@@ -41,20 +46,27 @@ private:
 //#include "EnetServer.tpp"
 
 template <class Listener>
-EnetServer<Listener>::EnetServer(EnetServerListener<Listener>* _listener, EnetServerSettings _settings) : listener(_listener), settings(_settings) {
+EnetServer<Listener>::~EnetServer() {
+	// Deallocate memory for clients
+	if (clients) {
+		delete [] clients;
+	}
+	if (clientIds) {
+		delete clientIds;
+	}
+}
+
+template <class Listener>
+void EnetServer<Listener>::setup(EnetServerListener<Listener>* _listener, EnetServerSettings _settings) {
+	listener = _listener;
+	settings = _settings;
+	// Allocate memory for clients
 	clients = new ENetPeer*[_settings.connections];
 	clientIds = new uint16_t[_settings.connections];
 	for (uint16_t i = 0; i < _settings.connections; ++i) {
 		clients[i] = NULL;
 		clientIds[i] = i;
 	}
-	newClientId = 0;
-}
-
-template <class Listener>
-EnetServer<Listener>::~EnetServer() {
-	delete [] clients;
-	delete clientIds;
 }
 
 template <class Listener>
@@ -121,6 +133,7 @@ void EnetServer<Listener>::connectEvent(const ENetEvent& event) {
 		clients[i] = event.peer;
 	}
 	std::cout << "connect event" << " num: " << i << std::endl;
+	listener->connectEventInterface(i);
 }
 
 template <class Listener>
@@ -133,11 +146,14 @@ void EnetServer<Listener>::disconnectEvent(const ENetEvent& event) {
 		dClientIds.push(i);
 	}
 	std::cout << "disconnect event" << " num: " << i << std::endl;
+	listener->disconnectEventInterface(i);
 }
 
 template <class Listener>
 void EnetServer<Listener>::receiveEvent(const ENetEvent& event) {
-	std::cout << "receive packet event" << " datalength: " << event.packet->dataLength << " data: " << event.packet->data << std::endl;
+	uint16_t i = *static_cast<uint16_t *>(event.peer->data);
+	std::cout << "receive packet event" << " num: " << i << " datalength: " << event.packet->dataLength << " data: " << event.packet->data << std::endl;
+	listener->receiveEventInterface(i, reinterpret_cast<char*>(event.packet->data), event.packet->dataLength, event.channelID);
 }
 
 // O(1)

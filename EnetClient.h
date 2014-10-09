@@ -11,7 +11,8 @@
 template<class Listener>
 class EnetClient : public EnetBase {
 public:
-	EnetClient(EnetClientListener<Listener>* _listener, EnetClientSettings _settings) : listener(_listener), settings(_settings), server(NULL) {}
+	EnetClient() : server(NULL) {}
+	void setup(EnetClientListener<Listener>* _listener, EnetClientSettings _settings);
 	bool startup();
 	bool connect(const std::string& ip, uint16_t port);
 	void disconnect();
@@ -31,6 +32,12 @@ private:
 
 // TODO implementation in separate file
 //#include "EnetClient.tpp"
+
+template<class Listener>
+void EnetClient<Listener>::setup(EnetClientListener<Listener>* _listener, EnetClientSettings _settings) {
+	listener = _listener;
+	settings = _settings;
+}
 
 template<class Listener>
 bool EnetClient<Listener>::startup() {
