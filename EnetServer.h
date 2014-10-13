@@ -9,6 +9,9 @@
 //tmp
 #include <iostream>
 
+// Max IPv4 address length + termination
+#define IP_MAX_ADDRESS 16
+
 template <class Listener>
 class EnetServer : public EnetBase {
 public:
@@ -16,7 +19,10 @@ public:
 	~EnetServer();
 	void setup(EnetServerListener<Listener>* _listener, EnetServerSettings _settings);
 	bool startup(uint16_t port);
-	void disconnect(uint16_t clientId);
+	void disconnectClient(uint16_t clientId);
+	std::string ipOfClientAsString(uint16_t clientId);
+	uint32_t ipOfClientAsInt(uint16_t clientId);
+	uint16_t portOfClient(uint16_t clientId);
 	void queuePacket(uint16_t clientId, const char* message, size_t messageSize, uint8_t channelId);
 
 	// From EnetBase
@@ -80,13 +86,48 @@ bool EnetServer<Listener>::startup(uint16_t port) {
 }
 
 template <class Listener>
-void EnetServer<Listener>::disconnect(uint16_t clientId) {
+void EnetServer<Listener>::disconnectClient(uint16_t clientId) {
 	ENetPeer* client = clients[clientId];
 	if (client) {
 		adapter.enetDisconnect(client);
 	} else {
 		// TODO log
 	}
+}
+
+template <class Listener>
+std::string EnetServer<Listener>::ipOfClientAsString(uint16_t clientId) {
+	ENetPeer* client = clients[clientId];
+	if (client) {
+		char hostName[IP_MAX_ADDRESS];
+		enet_address_get_host_ip(&client->address, hostName, IP_MAX_ADDRESS);
+		return std::string(hostName);
+	} else {
+		// TODO log
+	}
+	return std::string();
+}
+
+template <class Listener>
+uint32_t EnetServer<Listener>::ipOfClientAsInt(uint16_t clientId) {
+	ENetPeer* client = clients[clientId];
+	if (client) {
+		return client->address.host;
+	} else {
+		// TODO log
+	}
+	return 0;
+}
+
+template <class Listener>
+uint16_t EnetServer<Listener>::portOfClient(uint16_t clientId) {
+	ENetPeer* client = clients[clientId];
+	if (client) {
+		return client->address.port;
+	} else {
+		// TODO log
+	}
+	return 0;
 }
 
 template <class Listener>
