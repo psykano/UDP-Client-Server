@@ -14,8 +14,13 @@ struct EnetClientListener {
 		static_cast<Derived*>(this)->receiveEvent(message, messageSize, channelId);
 	}
 
+	void errorInterface(uint8_t err) {
+		static_cast<Derived*>(this)->error(err);
+	}
+
 	void disconnectEvent();
 	void receiveEvent(const char* message, size_t messageSize, uint16_t channelId);
+	void error(uint8_t err);
 };
 
 #endif

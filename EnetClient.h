@@ -5,6 +5,14 @@
 #include "EnetClientListener.h"
 #include "EnetSettings.h"
 
+enum ENET_CLIENT_ERROR_CODE {
+	ENET_CLIENT_ERROR_INIT,
+	ENET_CLIENT_ERROR_CREATE,
+	ENET_CLIENT_ERROR_NULL_SERVER,
+	ENET_CLIENT_ERROR_ALREADY_CONNECTED,
+	ENET_CLIENT_ERROR_NOT_CONNECTED
+};
+
 template<class Listener>
 class EnetClient : public EnetBase {
 public:
@@ -42,7 +50,11 @@ bool EnetClient<Listener>::startup() {
 	if (adapter.enetInit()) {
 		if (adapter.enetCreateNoAddress(1, settings.channels, settings.inBandwidth, settings.outBandwidth)) {
 			return true;
+		} else {
+			listener->errorInterface(ENET_CLIENT_ERROR_CREATE);
 		}
+	} else {
+		listener->errorInterface(ENET_CLIENT_ERROR_INIT);
 	}
 	return false;
 }
@@ -63,6 +75,8 @@ bool EnetClient<Listener>::connect(const std::string& ip, uint16_t port) {
 		if (server) {
 			return true;
 		}
+	} else {
+		listener->errorInterface(ENET_CLIENT_ERROR_ALREADY_CONNECTED);
 	}
 	return false;
 }
@@ -72,6 +86,8 @@ void EnetClient<Listener>::disconnect() {
 	if (server) {
 		adapter.enetDisconnectWithTimeout(server, settings.disconnectTimeout);
 		server = NULL;
+	} else {
+		listener->errorInterface(ENET_CLIENT_ERROR_NOT_CONNECTED);
 	}
 }
 
@@ -80,7 +96,7 @@ void EnetClient<Listener>::queuePacket(const char* message, size_t messageSize, 
 	if (server) {
 		adapter.enetQueuePacket(server, message, messageSize, channelId, settings.channelFlags[channelId]);
 	} else {
-		// TODO log
+		listener->errorInterface(ENET_CLIENT_ERROR_NOT_CONNECTED);
 	}
 }
 

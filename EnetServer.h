@@ -9,6 +9,13 @@
 // Max IPv4 address length + termination
 #define IP_MAX_ADDRESS 16
 
+enum ENET_SERVER_ERROR_CODE {
+	ENET_SERVER_ERROR_INIT,
+	ENET_SERVER_ERROR_CREATE,
+	ENET_SERVER_ERROR_NULL_CLIENT,
+	ENET_SERVER_ERROR_CONNECT_EVENT
+};
+
 template <class Listener>
 class EnetServer : public EnetBase {
 public:
@@ -79,7 +86,11 @@ bool EnetServer<Listener>::startup(uint16_t port) {
 	if (adapter.enetInit()) {
 		if (adapter.enetCreateWithAddressPortOnly(port, settings.connections, settings.channels, settings.inBandwidth, settings.outBandwidth)) {
 			return true;
+		} else {
+			listener->errorInterface(ENET_SERVER_ERROR_CREATE);
 		}
+	} else {
+		listener->errorInterface(ENET_SERVER_ERROR_INIT);
 	}
 	return false;
 }
@@ -96,7 +107,7 @@ void EnetServer<Listener>::disconnectClient(uint16_t clientId) {
 	if (client) {
 		adapter.enetDisconnect(client);
 	} else {
-		// TODO log
+		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
 	}
 }
 
@@ -108,7 +119,7 @@ void EnetServer<Listener>::disconnectClientNow(uint16_t clientId) {
 		clients[clientId] = NULL;
 		dClientIds.push(clientId);
 	} else {
-		// TODO log
+		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
 	}
 }
 
@@ -120,7 +131,7 @@ std::string EnetServer<Listener>::ipOfClientAsString(uint16_t clientId) {
 		enet_address_get_host_ip(&client->address, hostName, IP_MAX_ADDRESS);
 		return std::string(hostName);
 	} else {
-		// TODO log
+		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
 	}
 	return std::string();
 }
@@ -131,7 +142,7 @@ uint32_t EnetServer<Listener>::ipOfClientAsInt(uint16_t clientId) {
 	if (client) {
 		return client->address.host;
 	} else {
-		// TODO log
+		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
 	}
 	return 0;
 }
@@ -142,7 +153,7 @@ uint16_t EnetServer<Listener>::portOfClient(uint16_t clientId) {
 	if (client) {
 		return client->address.port;
 	} else {
-		// TODO log
+		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
 	}
 	return 0;
 }
@@ -153,7 +164,7 @@ void EnetServer<Listener>::queuePacket(uint16_t clientId, const char* message, s
 	if (client) {
 		adapter.enetQueuePacket(client, message, messageSize, channelId, settings.channelFlags[channelId]);
 	} else {
-		// TODO log
+		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
 	}
 }
 
@@ -182,7 +193,7 @@ void EnetServer<Listener>::connectEvent(const ENetEvent& event) {
 	uint16_t i = nextFreeClientId();
 	// Error
 	if (i < 0) {
-		// TODO log
+		listener->errorInterface(ENET_SERVER_ERROR_CONNECT_EVENT);
 		return;
 	}
 	// Mark and index client
