@@ -5,15 +5,13 @@
 #include "EnetClientListener.h"
 #include "EnetSettings.h"
 
-//tmp
-#include <iostream>
-
 template<class Listener>
 class EnetClient : public EnetBase {
 public:
 	EnetClient() : server(NULL) {}
 	void setup(EnetClientListener<Listener>* _listener, EnetClientSettings _settings);
 	bool startup();
+	void shutdown();
 	bool connect(const std::string& ip, uint16_t port);
 	void disconnect();
 	void queuePacket(const char* message, size_t messageSize, uint8_t channelId);
@@ -47,6 +45,14 @@ bool EnetClient<Listener>::startup() {
 		}
 	}
 	return false;
+}
+
+template<class Listener>
+void EnetClient<Listener>::shutdown() {
+	if (server) {
+		adapter.enetDisconnectNow(server);
+	}
+	kill();
 }
 
 template<class Listener>
@@ -97,13 +103,11 @@ void EnetClient<Listener>::poll() {
 
 template<class Listener>
 void EnetClient<Listener>::receiveEvent(const ENetEvent& event) {
-	std::cout << "receive packet event" << " datalength: " << event.packet->dataLength << " data: " << event.packet->data << std::endl;
 	listener->receiveEventInterface(reinterpret_cast<char*>(event.packet->data), event.packet->dataLength, event.channelID);
 }
 
 template<class Listener>
 void EnetClient<Listener>::disconnectEvent() {
-	std::cout << "disconnect event" << std::endl;
 	server = NULL;
 	listener->disconnectEventInterface();
 }

@@ -6,9 +6,6 @@
 #include "EnetSettings.h"
 #include <queue>
 
-//tmp
-#include <iostream>
-
 // Max IPv4 address length + termination
 #define IP_MAX_ADDRESS 16
 
@@ -19,7 +16,9 @@ public:
 	~EnetServer();
 	void setup(EnetServerListener<Listener>* _listener, EnetServerSettings _settings);
 	bool startup(uint16_t port);
+	void shutdown();
 	void disconnectClient(uint16_t clientId);
+	void disconnectClientNow(uint16_t clientId);
 	std::string ipOfClientAsString(uint16_t clientId);
 	uint32_t ipOfClientAsInt(uint16_t clientId);
 	uint16_t portOfClient(uint16_t clientId);
@@ -85,11 +84,29 @@ bool EnetServer<Listener>::startup(uint16_t port) {
 	return false;
 }
 
+template<class Listener>
+void EnetServer<Listener>::shutdown() {
+	adapter.enetDisconnectAllPeersNow();
+	kill();
+}
+
 template <class Listener>
 void EnetServer<Listener>::disconnectClient(uint16_t clientId) {
 	ENetPeer* client = clients[clientId];
 	if (client) {
 		adapter.enetDisconnect(client);
+	} else {
+		// TODO log
+	}
+}
+
+template <class Listener>
+void EnetServer<Listener>::disconnectClientNow(uint16_t clientId) {
+	ENetPeer* client = clients[clientId];
+	if (client) {
+		adapter.enetDisconnectNow(client);
+		clients[clientId] = NULL;
+		dClientIds.push(clientId);
 	} else {
 		// TODO log
 	}
@@ -173,7 +190,6 @@ void EnetServer<Listener>::connectEvent(const ENetEvent& event) {
 		event.peer->data = &clientIds[i];
 		clients[i] = event.peer;
 	}
-	std::cout << "connect event" << " num: " << i << std::endl;
 	listener->connectEventInterface(i);
 }
 
@@ -186,14 +202,12 @@ void EnetServer<Listener>::disconnectEvent(const ENetEvent& event) {
 		clients[i] = NULL;
 		dClientIds.push(i);
 	}
-	std::cout << "disconnect event" << " num: " << i << std::endl;
 	listener->disconnectEventInterface(i);
 }
 
 template <class Listener>
 void EnetServer<Listener>::receiveEvent(const ENetEvent& event) {
 	uint16_t i = *static_cast<uint16_t *>(event.peer->data);
-	std::cout << "receive packet event" << " num: " << i << " datalength: " << event.packet->dataLength << " data: " << event.packet->data << std::endl;
 	listener->receiveEventInterface(i, reinterpret_cast<char*>(event.packet->data), event.packet->dataLength, event.channelID);
 }
 

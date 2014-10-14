@@ -67,8 +67,20 @@ void EnetAdapter::enetDisconnectWithTimeout(ENetPeer* peer, uint32_t timeout) {
 	enetForceDisconnect(peer);
 }
 
+void EnetAdapter::enetDisconnectNow(ENetPeer* peer) {
+	// No user data
+	enet_peer_disconnect_now(peer, 0);
+}
+
 void EnetAdapter::enetForceDisconnect(ENetPeer* peer) {
 	enet_peer_reset(peer);
+}
+
+void EnetAdapter::enetDisconnectAllPeersNow() {
+	ENetPeer * currentPeer;
+    for (currentPeer = host->peers; currentPeer < &host->peers[host->peerCount]; ++currentPeer) {
+		enetDisconnectNow(currentPeer);
+	}
 }
 
 void EnetAdapter::enetQueuePacket(ENetPeer* peer, const char* message, size_t messageSize, uint8_t channel, uint32_t reliability) {
@@ -81,6 +93,7 @@ void EnetAdapter::enetSendQueuedPackets() {
 }
 
 int EnetAdapter::enetPollEvent(ENetEvent* event) {
+	// Return immediately
 	return enet_host_service(host, event, 0);
 }
 

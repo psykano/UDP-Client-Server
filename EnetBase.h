@@ -6,14 +6,16 @@
 
 class EnetBase {
 public:
-	void kill();
 	void sendQueuedPackets();
 
 	// Implement in derived class
+	void shutdown();
 	void poll();
 	void receiveEvent(const ENetEvent& event);
 
 protected:
+	void kill();
+
 	EnetAdapter adapter;
 };
 

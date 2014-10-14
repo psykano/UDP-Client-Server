@@ -16,7 +16,9 @@ public:
 	ENetPeer* enetConnectWithTimeout(const std::string& ip, uint16_t port, uint8_t channels, uint32_t timeout);
 	void enetDisconnect(ENetPeer* peer);
 	void enetDisconnectWithTimeout(ENetPeer* peer, uint32_t timeout);
+	void enetDisconnectNow(ENetPeer* peer);
 	void enetForceDisconnect(ENetPeer* peer);
+	void enetDisconnectAllPeersNow();
 	void enetQueuePacket(ENetPeer* peer, const char* message, size_t messageSize, uint8_t channel, uint32_t reliability);
 	void enetSendQueuedPackets();
 	int enetPollEvent(ENetEvent* event);
