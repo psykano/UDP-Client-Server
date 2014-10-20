@@ -26,8 +26,9 @@ const int TEXT_HEIGHT = 15;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-	// Update at 60FPS
+	// Update at 30FPS
 	ofSetVerticalSync(true);
+	ofSetFrameRate(30);
 
 	// Set up the server with default settings
 	EnetServerSettings settings;

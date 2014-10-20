@@ -45,8 +45,9 @@ const int TEXT_HEIGHT = 15;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-	// Update at 60FPS
+	// Update at 30FPS
 	ofSetVerticalSync(true);
+	ofSetFrameRate(30);
 
 	// Whether we've typed
 	typed = false;
