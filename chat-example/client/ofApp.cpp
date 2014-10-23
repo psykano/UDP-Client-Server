@@ -26,19 +26,11 @@ const int MAX_CHARS = 100;
 // Line limit
 const int MAX_LINES = 5;
 
+// Starting ASCII char
+const int ASCII_START = 32;
+
 // New line
 const string NEW_LINE = "\n";
-const int NEW_LINE_ASCII = 13;
-
-// backspace
-const int BACKSPACE_ASCII = 8;
-
-// delete
-const int DELETE_ASCII = 127;
-
-// shift
-const int SHIFT_KEY_1_ASCII = 2304;
-const int SHIFT_KEY_2_ASCII = 2305;
 
 // Height of text to display
 const int TEXT_HEIGHT = 15;
@@ -51,9 +43,6 @@ void ofApp::setup(){
 
 	// Whether we've typed
 	typed = false;
-
-	// Whether our message has been sent
-	messageSent = false;
 
 	// Typing line
 	messageLine = 0;
@@ -187,17 +176,50 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-	// Ignore shift
-	if (key == SHIFT_KEY_1_ASCII || key == SHIFT_KEY_2_ASCII) {
-		return;
-	}
+	// Only record keystrokes when connected
+	if (connected) {
 
-	// Keystrokes are only recorded when connected.
-	// We don't want to send the DELIMITER
-	if (connected && key != DELIMITER_ASCII) {
-		typed = true;
-		messageSent = false;
-		if (key == NEW_LINE_ASCII) {
+		// Ignore special keys and delimiter
+		if (key == OF_KEY_MODIFIER ||
+			key == OF_KEY_F1 ||
+			key == OF_KEY_F2 ||
+			key == OF_KEY_F3 ||
+			key == OF_KEY_F4 ||
+			key == OF_KEY_F5 ||
+			key == OF_KEY_F6 ||
+			key == OF_KEY_F7 ||
+			key == OF_KEY_F8 ||
+			key == OF_KEY_F9 ||
+			key == OF_KEY_F10 ||
+			key == OF_KEY_F11 ||
+			key == OF_KEY_F12 ||
+			key == OF_KEY_LEFT ||
+			key == OF_KEY_UP ||
+			key == OF_KEY_RIGHT ||
+			key == OF_KEY_DOWN ||
+			key == OF_KEY_PAGE_UP ||
+			key == OF_KEY_PAGE_DOWN ||
+			key == OF_KEY_HOME ||
+			key == OF_KEY_END ||
+			key == OF_KEY_INSERT ||
+			key == OF_KEY_CONTROL ||
+			key == OF_KEY_ALT ||
+			key == OF_KEY_SHIFT ||
+			key == OF_KEY_SUPER ||
+			key == OF_KEY_LEFT_SHIFT ||
+			key == OF_KEY_RIGHT_SHIFT ||
+			key == OF_KEY_LEFT_CONTROL ||
+			key == OF_KEY_RIGHT_CONTROL ||
+			key == OF_KEY_LEFT_ALT ||
+			key == OF_KEY_RIGHT_ALT ||
+			key == OF_KEY_LEFT_SUPER ||
+			key == OF_KEY_RIGHT_SUPER ||
+			key == DELIMITER_ASCII) {
+			return;
+		}
+
+		if (key == OF_KEY_RETURN) {
+			// Start a new line and have other lines scroll up
 			if (messageLine == MAX_LINES-1) {
 				sendMessageSwapLines();
 			} else {
@@ -205,20 +227,27 @@ void ofApp::keyPressed(int key){
 				sendMessages.push_back(string());
 			}
 			messagePos = 0;
-		} else if (key == BACKSPACE_ASCII || key == DELETE_ASCII) {
+		} else if (key == OF_KEY_BACKSPACE || key == OF_KEY_DEL) {
+			// Delete last keystroke on current line
 			if (messagePos != 0) {
 				--messagePos;
 				sendMessages.at(messageLine) = sendMessages.at(messageLine).substr(0, messagePos);
 			} else {
 				sendMessages.at(messageLine) = "";
 			}
-		} else if (messagePos < MAX_CHARS) {
+		} else if (messagePos < MAX_CHARS && (key >= ASCII_START || key == OF_KEY_TAB)) {
+			// Add new keystroke to current line
 			sendMessages.at(messageLine).append(1, (char)key);
 			++messagePos;
+		} else {
+			// Ignore keystroke
+			return;
 		}
 
+		typed = true;
+
 		if (reliable) {
-			// Send message next update
+			// Queue message to be sent next update
 			string message = messageToSend();
 			client.queuePacket(message.c_str(), message.length() + 1, 1);
 			client.sendQueuedPackets();

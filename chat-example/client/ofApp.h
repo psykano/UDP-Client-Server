@@ -47,7 +47,6 @@ class ofApp : public ofBaseApp, public EnetClientListener<ofApp> {
 
 		bool connected;
 		bool typed;
-		bool messageSent;
 
 		bool reliable;
 
