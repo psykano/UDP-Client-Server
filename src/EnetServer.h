@@ -22,8 +22,13 @@ public:
 	EnetServer() : clients(NULL), clientIds(NULL), newClientId(0) {}
 	~EnetServer();
 	void setup(EnetServerListener<Listener>* _listener, EnetServerSettings _settings);
-	bool startup(uint16_t port);
+
+	// From EnetBaseInterface
 	void shutdown();
+	void poll();
+
+	// From EnetServerInterface
+	bool startup(uint16_t port);
 	void disconnectClient(uint16_t clientId);
 	void disconnectClientNow(uint16_t clientId);
 	std::string ipOfClientAsString(uint16_t clientId);
@@ -31,12 +36,11 @@ public:
 	uint16_t portOfClient(uint16_t clientId);
 	void queuePacket(uint16_t clientId, const char* message, size_t messageSize, uint8_t channelId);
 
-	// From EnetBase
-	void poll();
-	void receiveEvent(const ENetEvent& event);
-
 	void connectEvent(const ENetEvent& event);
 	void disconnectEvent(const ENetEvent& event);
+
+	// From EnetBase
+	void receiveEvent(const ENetEvent& event);
 
 private:
 	// To avoid problems with destruction

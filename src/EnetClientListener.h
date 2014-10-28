@@ -1,8 +1,6 @@
 #ifndef ENET_CLIENT_LISTENER
 #define ENET_CLIENT_LISTENER
 
-#include "enet\enet.h"
-
 // CRTP listener
 template <class Derived>
 struct EnetClientListener {

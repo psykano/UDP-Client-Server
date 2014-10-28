@@ -18,17 +18,19 @@ class EnetClient : public EnetBase {
 public:
 	EnetClient() : server(NULL) {}
 	void setup(EnetClientListener<Listener>* _listener, EnetClientSettings _settings);
-	bool startup();
+
+	// From EnetBaseInterface
 	void shutdown();
+	void poll();
+
+	bool startup();
 	bool connect(const std::string& ip, uint16_t port);
 	void disconnect();
 	void queuePacket(const char* message, size_t messageSize, uint8_t channelId);
+	void disconnectEvent();
 
 	// From EnetBase
-	void poll();
 	void receiveEvent(const ENetEvent& event);
-
-	void disconnectEvent();
 
 private:
 	EnetClientListener<Listener>* listener;

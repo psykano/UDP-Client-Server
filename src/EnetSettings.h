@@ -2,7 +2,6 @@
 #define ENET_SETTINGS
 
 #include <stdint.h>
-#include "enet\enet.h"
 
 #define SERVER_MAX_CHANNELS 4
 #define CLIENT_MAX_CHANNELS 2

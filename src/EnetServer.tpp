@@ -22,6 +22,32 @@ void EnetServer<Listener>::setup(EnetServerListener<Listener>* _listener, EnetSe
 	}
 }
 
+template<class Listener>
+void EnetServer<Listener>::shutdown() {
+	adapter.enetDisconnectAllPeersNow();
+	kill();
+}
+
+template <class Listener>
+void EnetServer<Listener>::poll() {
+	ENetEvent event;
+	while (adapter.enetPollEvent(&event) > 0) {
+		switch (event.type) {
+		case ENET_EVENT_TYPE_RECEIVE:
+			receiveEvent(event);
+			// Clean up
+			enet_packet_destroy(event.packet);
+			break;
+		case ENET_EVENT_TYPE_CONNECT:
+			connectEvent(event);
+			break;
+		case ENET_EVENT_TYPE_DISCONNECT:
+			disconnectEvent(event);
+			break;
+		}
+	}
+}
+
 template <class Listener>
 bool EnetServer<Listener>::startup(uint16_t port) {
 	if (adapter.enetInit()) {
@@ -34,12 +60,6 @@ bool EnetServer<Listener>::startup(uint16_t port) {
 		listener->errorInterface(ENET_SERVER_ERROR_INIT);
 	}
 	return false;
-}
-
-template<class Listener>
-void EnetServer<Listener>::shutdown() {
-	adapter.enetDisconnectAllPeersNow();
-	kill();
 }
 
 template <class Listener>
@@ -106,26 +126,6 @@ void EnetServer<Listener>::queuePacket(uint16_t clientId, const char* message, s
 		adapter.enetQueuePacket(client, message, messageSize, channelId, settings.channelFlags[channelId]);
 	} else {
 		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
-	}
-}
-
-template <class Listener>
-void EnetServer<Listener>::poll() {
-	ENetEvent event;
-	while (adapter.enetPollEvent(&event) > 0) {
-		switch (event.type) {
-		case ENET_EVENT_TYPE_RECEIVE:
-			receiveEvent(event);
-			// Clean up
-			enet_packet_destroy(event.packet);
-			break;
-		case ENET_EVENT_TYPE_CONNECT:
-			connectEvent(event);
-			break;
-		case ENET_EVENT_TYPE_DISCONNECT:
-			disconnectEvent(event);
-			break;
-		}
 	}
 }
 
