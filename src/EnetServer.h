@@ -38,6 +38,7 @@ public:
 
 	void connectEvent(const ENetEvent& event);
 	void disconnectEvent(const ENetEvent& event);
+	uint32_t meanClientPing(uint16_t clientId);
 
 	// From EnetBase
 	void receiveEvent(const ENetEvent& event);

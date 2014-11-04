@@ -28,6 +28,7 @@ public:
 	void disconnect();
 	void queuePacket(const char* message, size_t messageSize, uint8_t channelId);
 	void disconnectEvent();
+	uint32_t meanServerPing();
 
 	// From EnetBase
 	void receiveEvent(const ENetEvent& event);

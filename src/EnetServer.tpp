@@ -158,6 +158,17 @@ void EnetServer<Listener>::disconnectEvent(const ENetEvent& event) {
 }
 
 template <class Listener>
+uint32_t EnetServer<Listener>::meanClientPing(uint16_t clientId) {
+	ENetPeer* client = clients[clientId];
+	if (client) {
+		return client->roundTripTime;
+	} else {
+		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
+	}
+	return 0;
+}
+
+template <class Listener>
 void EnetServer<Listener>::receiveEvent(const ENetEvent& event) {
 	uint16_t i = *static_cast<uint16_t *>(event.peer->data);
 	listener->receiveEventInterface(i, reinterpret_cast<char*>(event.packet->data), event.packet->dataLength, event.channelID);
