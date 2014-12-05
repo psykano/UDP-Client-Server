@@ -120,6 +120,17 @@ uint16_t EnetServer<Listener>::portOfClient(uint16_t clientId) {
 }
 
 template <class Listener>
+uint32_t EnetServer<Listener>::meanPingOfClient(uint16_t clientId) {
+	ENetPeer* client = clients[clientId];
+	if (client) {
+		return client->roundTripTime;
+	} else {
+		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
+	}
+	return 0;
+}
+
+template <class Listener>
 void EnetServer<Listener>::queuePacket(uint16_t clientId, const char* message, size_t messageSize, uint8_t channelId) {
 	ENetPeer* client = clients[clientId];
 	if (client) {
@@ -155,17 +166,6 @@ void EnetServer<Listener>::disconnectEvent(const ENetEvent& event) {
 		dClientIds.push(i);
 	}
 	listener->disconnectEventInterface(i);
-}
-
-template <class Listener>
-uint32_t EnetServer<Listener>::meanClientPing(uint16_t clientId) {
-	ENetPeer* client = clients[clientId];
-	if (client) {
-		return client->roundTripTime;
-	} else {
-		listener->errorInterface(ENET_SERVER_ERROR_NULL_CLIENT, &clientId);
-	}
-	return 0;
 }
 
 template <class Listener>

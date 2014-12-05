@@ -13,25 +13,12 @@
 // Default mode is minimum ping
 #define DEFAULT_MINIMUM_PING 100
 
-enum EnetLagServerMode
-{
-	// Clients must have a minimum predetermined ping
-	MINIMUM_PING,
-	// Clients must have the ping of the client with the worse (greatest) ping
-	WORSE_CLIENT_PING,
-	// Clients must have a minimum ping of the mean ping for all clients
-	MEAN_CLIENT_PING
-};
-
 template <class Listener>
 class EnetLagServer : EnetBaseInterface, EnetServerInterface, EnetServerListener<EnetLagServer<Listener>> {
 public:
 	EnetLagServer() {}
 	void setup(EnetServerListener<Listener>* _listener, EnetServerSettings _settings);
-	void setModeAsMinimumPing(uint32_t _minPing);
-	void setModeToWorseClientPing(uint32_t pingCheckDelay);
-	void setModeToMeanClientPing(uint32_t pingCheckDelay);
-	EnetLagServerMode getMode();
+	void setMinimumPing(uint32_t _minPing);
 
 	// From EnetBaseInterface
 	void shutdown();
@@ -44,6 +31,7 @@ public:
 	std::string ipOfClientAsString(uint16_t clientId);
 	uint32_t ipOfClientAsInt(uint16_t clientId);
 	uint16_t portOfClient(uint16_t clientId);
+	uint32_t meanPingOfClient(uint16_t clientId);
 	void queuePacket(uint16_t clientId, const char* message, size_t messageSize, uint8_t channelId);
 
 	// From EnetServerListener
@@ -65,7 +53,6 @@ private:
 	std::vector<EnetLagPacket> receivedPackets;
 	std::vector<EnetLagPacket> sendPackets;
 
-	EnetLagServerMode mode;
 	uint32_t minPing;
 };
 
@@ -73,32 +60,12 @@ template <class Listener>
 void EnetLagServer<Listener>::setup(EnetServerListener<Listener>* _listener, EnetServerSettings _settings) {
 	listener = _listener;
 	server.setup(this, _settings);
-	setModeAsMinimumPing(DEFAULT_MINIMUM_PING);
+	setMinimumPing(DEFAULT_MINIMUM_PING);
 }
 
 template <class Listener>
-void EnetLagServer<Listener>::setModeAsMinimumPing(uint32_t _minPing) {
-	mode = MINIMUM_PING;
+void EnetLagServer<Listener>::setMinimumPing(uint32_t _minPing) {
 	minPing = _minPing;
-}
-
-template <class Listener>
-void EnetLagServer<Listener>::setModeToWorseClientPing(uint32_t calculatePingInterval) {
-	mode = WORSE_CLIENT_PING;
-
-	// todo
-}
-
-template <class Listener>
-void EnetLagServer<Listener>::setModeToMeanClientPing(uint32_t calculatePingInterval) {
-	mode = MEAN_CLIENT_PING;
-
-	// todo
-}
-
-template <class Listener>
-EnetLagServerMode EnetLagServer<Listener>::getMode() {
-	return mode;
 }
 
 template <class Listener>
@@ -108,9 +75,6 @@ void EnetLagServer<Listener>::shutdown() {
 
 template <class Listener>
 void EnetLagServer<Listener>::poll() {
-	// todo
-	// calculate worse client ping and mean client ping using function pointer
-
 	uint32_t time = getTime();
 
 	// Process received packets in queue
@@ -173,6 +137,11 @@ uint16_t EnetLagServer<Listener>::portOfClient(uint16_t clientId) {
 }
 
 template <class Listener>
+uint32_t EnetLagServer<Listener>::meanPingOfClient(uint16_t clientId) {
+	return server.meanPingOfClient(clientId);
+}
+
+template <class Listener>
 void EnetLagServer<Listener>::queuePacket(uint16_t clientId, const char* message, size_t messageSize, uint8_t channelId) {
 	uint32_t processTime = getTime() + calculatePing(clientId);
 	EnetLagPacket packet(processTime, clientId, message, messageSize, channelId);
@@ -209,7 +178,7 @@ uint32_t EnetLagServer<Listener>::getTime() {
 
 template <class Listener>
 uint32_t EnetLagServer<Listener>::calculatePing(uint16_t clientId) {
-	uint32_t clientPing = server.meanClientPing(clientId);
+	uint32_t clientPing = meanPingOfClient(clientId);
 	if (minPing > clientPing) {
 		return minPing - clientPing;
 	}
